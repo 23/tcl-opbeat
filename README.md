@@ -24,6 +24,8 @@ Valid options are:
 
 Wrapping any block of code with `opbeat::with_logging { ... }` will catch errors throw them to Opbeat:
 
+    package require opbeat
+    opbeat::init <org_id> <app_id> <secret_token> [<environment>]
     opbeat::with_logging {
         this_wont_work
     }
