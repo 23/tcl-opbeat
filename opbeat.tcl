@@ -4,11 +4,7 @@
 # Interface for Opbeat error logging and distribution tracking.
 #
 ###Change history:
-# 0.1.0 - First 
-# 0.8.0 - fixed bug in getLocal using wrong prefix.
-#         Upgraded to Tcl 8.5 release version.
-# 1.0.0 - added SetAcl, GetAcl, and -acl keep option.
-#
+# 0.1.0 - First release
 
 package require Tcl 8.5
 package require http
