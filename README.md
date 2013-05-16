@@ -1,3 +1,9 @@
+### Installing
+
+Installing is fair easy (with some sudo magic at least):
+
+    git clone git@github.com:23/tcl-opbeat.git && sudo mv tcl-opbeat /usr/lib/tcltk/
+
 ### Starting up
 
 To start using Tcl opbeat package, initialize it with your Opbeat credentials:
@@ -71,5 +77,3 @@ Valid options are:
 * `-http_data`: Key-value list of request POST data.
 * `-user_info`: Key-value list of user data, keys `id` and `is_authenticated` are expected by Opbeat, but other data is arbitrary.
 * `-query_info`: Key-value list of database query data, keys `engine` and `query` are expected by Opbeat.
-
-### The easy

@@ -15,6 +15,9 @@ package require huddle
 package provide opbeat 0.1.0
 
 namespace eval opbeat { 
+    variable queue ; # A queue for async logging
+    set queue [list]
+
     variable config ; # A dict for current config info.
     variable config_orig ; # Holds "reset" version.
 
@@ -98,8 +101,9 @@ proc opbeat::send {
         }
         http::config -useragent $c(user_agent)
         set json_body [huddle jsondump $payload]
+        opbeat::debug $json_body
         if { [lsearch -exact {test testing dev development} $c(env)]>=0 } {
-            opbeat::debug $json_body
+            opbeat::debug "Not sending, development more"
         } else {
             # Make the actual request
             set token [http::geturl \
@@ -113,7 +117,7 @@ proc opbeat::send {
             set http_data [http::data $token]
             http::cleanup $token
             if { $http_ncode ne "202" } {
-                opbeat::debug  "Error logging to Opbeat: $http_ncode / $http_data"
+                opbeat::debug "Error logging to Opbeat: $http_ncode / $http_data"
             }
         }
     }
@@ -154,11 +158,18 @@ proc opbeat::log_error {args} {
         query_info ""
     }
 
-    if { [llength $args]<1 || [expr [llength $args] % 2]!=1 } {
-        error "Bad argument, syntax is 'opbeat::log_error message -option value -option value ...'. Valid options are [join [array keys options {, }]]." "" [list opbeat usage [lindex $args end] "Invalid argument to log_error"]
-    }
     set message [lindex $args 0]
-    foreach {o v} [lrange $args 1 end] {
+    if { [llength $args]==2 } {
+        set args [lindex $args 1]
+    } else {
+        set args [lrange $args 1 end]
+    }
+    puts [llength $args]
+    puts [expr [llength $args] % 2]
+    if { [expr [llength $args] % 2]!=0 } {
+        error "Bad argument, syntax is 'opbeat::log_error message -option value -option value ...'" "" [list opbeat usage [lindex $args end] "Invalid argument to log_error"]
+    }
+    foreach {o v} $args {
         set "options([string range $o 1 end])" $v
     }
 
@@ -172,7 +183,7 @@ proc opbeat::log_error {args} {
                      logger $c(logger) \
                      server_name $c(hostname) \
                      client_supplied_id $client_supplied_id \
-                     stacktrace [huddle create trace [huddle compile string $options(error_info)]] \
+                     stacktrace [huddle compile dict [list trace [string map [list "\{" "(" "\}" ")"] $options(error_info)]]] \
                     ]
 
     # HTTP info, url and method are required
