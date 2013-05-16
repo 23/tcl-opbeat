@@ -125,7 +125,7 @@ proc opbeat::send {
             set http_data [http::data $token]
             http::cleanup $token
             if { $http_ncode ne "202" } {
-                opbeat::debug "Error logging to Opbeat: $http_ncode / $http_data"
+                opbeat::log "Error logging to Opbeat: $http_ncode / $http_data"
             }
         }
     }
@@ -245,7 +245,7 @@ proc opbeat::with_logging {code {bubble_error "1"}} {
     }
 }
 
-proc opbeat::log_deployment {{name "myapp"} {version ""}} {
+proc opbeat::log_deployment {{name "myapp"} {version ""} {git_dir "."}} {
     variable config
     array set c $config
     if { !$c(inited) } {
@@ -258,10 +258,11 @@ proc opbeat::log_deployment {{name "myapp"} {version ""}} {
 
     # Brute-force try getting some git information
     catch {
+        set git_dir [file join $git_dir .git]
         set type git
-        set git_revision [exec git rev-parse HEAD]
-        set git_branch [exec git rev-parse --abbrev-ref HEAD]
-        set git_repository [exec git config --get remote.origin.url]
+        set git_revision [exec git --git-dir=${git_dir} rev-parse HEAD]
+        set git_branch [exec git --git-dir=${git_dir} rev-parse --abbrev-ref HEAD]
+        set git_repository [exec git --git-dir=${git_dir} config --get remote.origin.url]
         huddle set releases vcs [huddle compile dict [list type $type revision $git_revision repository $git_repository branch $git_branch]]
     }
     if { $version eq "" } {
@@ -273,7 +274,7 @@ proc opbeat::log_deployment {{name "myapp"} {version ""}} {
     }
     huddle set releases version $version
     huddle set payload machines [huddle compile "list dict" [list [list hostname $c(hostname)]]]
-    huddle set payload releases $releases
+    huddle set payload releases [huddle list $releases]
 
     opbeat::log "Logging deployment of ${name} ${version} to Opbeat"
     opbeat::send "deployment" $payload
