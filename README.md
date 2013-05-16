@@ -24,6 +24,7 @@ Valid options are:
 * `-hostname`: Hostname of the logger, defaults to `info hostname`.
 * `-logger`: A string identifying the logger.
 * `-user_agent`: User agent to to report with (why would you need this?)
+* `-debug`: Print debug information.
 * `-sync`: Do not log to Opbeat immediately. If you set this option to `1`, you are reponsible for triggering logs later on by calling `opbeat::handle_async_queue`.
 
 ### Logging errors, the easy way

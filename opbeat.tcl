@@ -30,13 +30,21 @@ namespace eval opbeat {
                          hostname [info hostname] \
                          logger "tcl opbeat" \
                          sync 1 \
+                         debug 0 \
                          user_agent "tcl-opbeat/0.1"
                         ]
     set config $config_orig
 }
 
 proc opbeat::debug {args} {
-    puts $args
+    variable config
+    array set c $config
+    if { $c(debug) } {
+        puts [lindex $args 0]
+    }
+}
+proc opbeat::log {args} {
+    puts [lindex $args 0]
 }
 proc opbeat::config {args} {
     variable config
@@ -103,7 +111,7 @@ proc opbeat::send {
         set json_body [huddle jsondump $payload]
         opbeat::debug $json_body
         if { [lsearch -exact {test testing dev development} $c(env)]>=0 } {
-            opbeat::debug "Not sending, development more"
+            opbeat::log "Not sending, development more"
         } else {
             # Make the actual request
             set token [http::geturl \
@@ -125,10 +133,13 @@ proc opbeat::send {
 
 proc opbeat::handle_async_queue {} {
     variable queue
-    set local_queue $queue
-    set queue ""
-    foreach {method payload} $local_queue {
-        opbeat::send $method $payload 1
+    if { [llength $queue] > 0 } {
+        set local_queue $queue
+        set queue ""
+        opbeat::debug "Posting [llength $local_queue] log items from async queue"
+        foreach {method payload} $local_queue {
+            opbeat::send $method $payload 1
+        }
     }
 }
 
@@ -164,8 +175,6 @@ proc opbeat::log_error {args} {
     } else {
         set args [lrange $args 1 end]
     }
-    puts [llength $args]
-    puts [expr [llength $args] % 2]
     if { [expr [llength $args] % 2]!=0 } {
         error "Bad argument, syntax is 'opbeat::log_error message -option value -option value ...'" "" [list opbeat usage [lindex $args end] "Invalid argument to log_error"]
     }
