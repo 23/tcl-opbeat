@@ -99,10 +99,10 @@ proc opbeat::send {
         lappend queue $method $payload
     } else {
         # Set URL, User-Agent and json body to post to
+        set base_url "https://opbeat.com/api/v1/organizations/${c(organization_id)}/apps/${c(app_id)}/"
         switch -exact $method {
-            error {
-                set url "https://opbeat.com/api/v1/organizations/${c(organization_id)}/apps/${c(app_id)}/errors/"
-            }
+            error {set url "${base_url}errors/"}
+            deployment {set url "${base_url}deployments/"}
             default {
                 error "Method '$method' is not supported by Opbeat implementation" "" [list opbeat usage [lindex $args 0] "Opbeat not inited"]
             }
@@ -243,4 +243,38 @@ proc opbeat::with_logging {code {bubble_error "1"}} {
             error $err $i $c
         }
     }
+}
+
+proc opbeat::log_deployment {{name "myapp"} {version ""}} {
+    variable config
+    array set c $config
+    if { !$c(inited) } {
+        error "Opbeat package must be inited with opbeat::init" "" [list opbeat usage [lindex $args 0] "Opbeat not inited"]
+    }
+
+    set payload [huddle create]
+    set releases [huddle create]
+    huddle set releases module [huddle compile dict [list name $name]]
+
+    # Brute-force try getting some git information
+    catch {
+        set type git
+        set git_revision [exec git rev-parse HEAD]
+        set git_branch [exec git rev-parse --abbrev-ref HEAD]
+        set git_repository [exec git config --get remote.origin.url]
+        huddle set releases vcs [huddle compile dict [list type $type revision $git_revision repository $git_repository branch $git_branch]]
+    }
+    if { $version eq "" } {
+        if { [info exists git_revision] } {
+            set version $git_revision
+        } else {
+            set version "1.0"
+        }
+    }
+    huddle set releases version $version
+    huddle set payload machines [huddle compile "list dict" [list [list hostname $c(hostname)]]]
+    huddle set payload releases $releases
+
+    opbeat::log "Logging deployment of ${name} ${version} to Opbeat"
+    opbeat::send "deployment" $payload
 }

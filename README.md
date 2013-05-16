@@ -78,3 +78,20 @@ Valid options are:
 * `-http_data`: Key-value list of request POST data.
 * `-user_info`: Key-value list of user data, keys `id` and `is_authenticated` are expected by Opbeat, but other data is arbitrary.
 * `-query_info`: Key-value list of database query data, keys `engine` and `query` are expected by Opbeat.
+
+
+### Logging deployments
+
+Just like Opbeat, the library will try to catch relevant from git repositories in order to make deployment logging easy. 
+
+    package require opbeat
+    opbeat::init <org_id> <app_id> <secret_token> [<environment>]
+    opbeat::log_deployment [<app-name>] [<app-version>]
+
+In its essence, this means that you can run either of these after the package is inited:
+
+    opbeat::log_deployment
+    opbeat::log_deployment transcoding-service
+    opbeat::log_deployment transcoding-service 2.3
+
+
