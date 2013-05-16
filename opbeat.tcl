@@ -166,13 +166,13 @@ proc opbeat::log_error {args} {
     set extra [huddle compile dict [list error_code $options(error_code)]]
     set client_supplied_id "tcl-${c(app_id)}-[clock seconds]-[expr int(rand()*99999.0)]"
     set payload [huddle create \
-                     message $message \
+                     message [huddle compile string $message] \
                      timestamp [clock format [clock seconds] -format "%Y-%m-%dT%H:%M:%S.000Z" -gmt 1] \
                      level $options(level) \
                      logger $c(logger) \
                      server_name $c(hostname) \
                      client_supplied_id $client_supplied_id \
-                     stacktrace [huddle compile dict [list trace [string map [list "\{" "(" "\}" ")"] $options(error_info)]]] \
+                     stacktrace [huddle create trace [huddle compile string $options(error_info)]] \
                     ]
 
     # HTTP info, url and method are required
@@ -211,3 +211,16 @@ proc opbeat::log_error {args} {
 
     return $client_supplied_id
 }        
+
+proc opbeat::with_logging {code {bubble_error "1"}} {
+    if { [catch {
+        uplevel 1 $code
+    } err] } {
+        set i ${::errorInfo}
+        set c ${::errorCode}
+        opbeat::log_error $err -error_info $i -error_code $c
+        if { $bubble_error } {
+            error $err $i $c
+        }
+    }
+}

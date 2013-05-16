@@ -1,4 +1,4 @@
-# Starting up
+### Starting up
 
 To start using Tcl opbeat package, initialize it with your Opbeat credentials:
 
@@ -20,7 +20,21 @@ Valid options are:
 * `-user_agent`: User agent to to report with (why would you need this?)
 * `-sync`: Do not log to Opbeat immediately. If you set this option to `1`, you are reponsible for triggering logs later on by calling `opbeat::handle_async_queue`.
 
-# Logging errors
+### Logging errors, the easy way
+
+Wrapping any block of code with `opbeat::with_logging { ... }` will catch errors throw them to Opbeat:
+
+    opbeat::with_logging {
+        this_wont_work
+    }
+
+By default, that would also trigger an `error`, but you can choose not to have errors bubble:
+
+    opbeat::with_logging {
+        this_wont_work_but_we_dont_care
+    } 0
+
+### Logging errors, the hard way
 
 Logging an error can be as simple as
 
@@ -55,3 +69,5 @@ Valid options are:
 * `-http_data`: Key-value list of request POST data.
 * `-user_info`: Key-value list of user data, keys `id` and `is_authenticated` are expected by Opbeat, but other data is arbitrary.
 * `-query_info`: Key-value list of database query data, keys `engine` and `query` are expected by Opbeat.
+
+### The easy
