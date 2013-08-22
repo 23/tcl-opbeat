@@ -254,7 +254,7 @@ proc opbeat::log_deployment {{name "myapp"} {version ""} {git_dir "."}} {
 
     set payload [huddle create]
     set releases [huddle create]
-    huddle set releases module [huddle compile dict [list name $name]]
+    huddle set releases module [huddle compile dict [list name $name type repository]]
 
     # Brute-force try getting some git information
     catch {
